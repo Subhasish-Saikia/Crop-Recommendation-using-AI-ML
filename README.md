@@ -48,7 +48,7 @@ Sensors connected to Arduino Uno:
 1. Connect Arduino with sensors and upload the Arduino code.
 2. Run the Python script:
    ```bash
-   python main.py
+   python_folder_name.py
    ```
 3. Serial data will be read and fed into the ML model.
 4. The model will print the most suitable crop and show visual graphs.
@@ -79,8 +79,7 @@ Sensors connected to Arduino Uno:
 
 ## ✅ Results
 
-- Model Accuracy: ~92%  
-- Real-time predictions with <1s delay  
+- Model Accuracy: ~92%   
 - Graph similarity scoring for decision confidence
 
 ---
