@@ -94,6 +94,5 @@ Sensors connected to Arduino Uno:
 
 ## 📝 Credits
 
-- Dataset: [Kaggle Crop Recommendation](https://www.kaggle.com/datasets)
 - Libraries: Scikit-learn, Matplotlib, DTAIDistance
 - Special thanks to the Open Source and IoT communities
