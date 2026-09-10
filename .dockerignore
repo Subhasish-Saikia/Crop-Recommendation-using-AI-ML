@@ -1,0 +1,10 @@
+.git
+__pycache__
+*.pyc
+*.pkl
+*.pdf
+screen.png
+DESIGN.md
+Precision_Agriculture.py
+exquisite_tumelo1.ino
+README.md

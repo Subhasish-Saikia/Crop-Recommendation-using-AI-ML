@@ -1,6 +1,6 @@
-# 🌾 Precision Agriculture using AI and Arduino
+# Fieldwise Crop Recommendation
 
-This project integrates **Artificial Intelligence (AI)** and **IoT using Arduino** to recommend the most suitable crops for a given field, based on real-time environmental data like soil moisture, pH, humidity, temperature, and more.
+Fieldwise recommends a crop from the labeled profiles in `recomendation.csv` using normalized distance across seven soil and climate features. The repository includes a dependency-free Python web API, a browser interface, and an optional Random Forest training script.
 
 ---
 
@@ -10,13 +10,12 @@ To develop a **smart crop recommendation system** that collects real-time enviro
 
 ---
 
-## 📦 Technologies Used
+## Components
 
 - Arduino Uno + Sensors (Soil Moisture, pH, MQ135, LDR, TMP36, Rain Sensor)
 - Python (Data Processing, Visualization, ML)
 - Machine Learning (Random Forest Classifier)
-- Matplotlib, Pandas, Scikit-learn
-- Dynamic Time Warping (DTW) for graph similarity
+- Pandas, scikit-learn, and joblib for optional model training
 
 ---
 
@@ -45,13 +44,39 @@ Sensors connected to Arduino Uno:
 
 ## 🖥️ How to Run the Project
 
-1. Connect Arduino with sensors and upload the Arduino code.
-2. Run the Python script:
+### Run the web app locally
+
+Start the network-ready frontend and prediction API from this folder:
+
+```bash
+python server.py
+```
+
+Then open `http://localhost:8000` on the host computer. The server also prints a LAN URL such as `http://192.168.x.x:8000`; devices on the same Wi-Fi can use that address.
+
+The server binds to `0.0.0.0` by default and reads `PORT` and `HOST` when provided. It exposes `GET /api/health`, `GET /api/profiles`, and `POST /api/predict`. The API validates all values and has no authentication, so place it behind an authenticated reverse proxy before exposing it publicly.
+
+Use another port when needed:
+
+```bash
+python server.py --port 8080
+```
+
+### Run with Docker
+
+```bash
+docker build -t fieldwise .
+docker run --rm -p 8000:8000 fieldwise
+```
+
+### Retrain the optional Random Forest model
+
+Install the training dependencies and run:
+
    ```bash
-   python_folder_name.py
+   python -m pip install -r requirements.txt
+   python Precision_Agriculture.py
    ```
-3. Serial data will be read and fed into the ML model.
-4. The model will print the most suitable crop and show visual graphs.
 
 ---
 
@@ -64,23 +89,23 @@ Sensors connected to Arduino Uno:
 
 ---
 
-## 📁 File Structure
+## File Structure
 
 ```
 📦 Project Root
-├── recommendation.csv          # Dataset
-├── main.py                     # Python ML & Graph code
-├── arduino.ino                 # Arduino sketch
-├── Precision_Agriculture_Report.pdf   # Final report
-└── README.md                   # This file
+├── recomendation.csv           # Labeled profiles used by the API
+├── server.py                   # Web server and prediction API
+├── code.html                   # Browser interface
+├── Precision_Agriculture.py    # Optional Random Forest training script
+├── Dockerfile                  # Production container for the API and UI
+└── requirements.txt            # Training dependencies
 ```
 
 ---
 
 ## ✅ Results
 
-- Model Accuracy: ~92%   
-- Graph similarity scoring for decision confidence
+The API returns the closest profile and a relative confidence score. Evaluate any retrained classifier on a held-out test set before using it for agronomic decisions.
 
 ---
 

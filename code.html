@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fieldwise | Crop recommendation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --ink:#f4f4f1; --muted:#8c929c; --line:#29303a; --page:#09111d; --panel:#111a27; --green:#bafc73; --mono:'DM Mono',monospace; --sans:'Manrope',sans-serif; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans); min-width:320px; }
+    button,input { font:inherit; } button { cursor:pointer; } a { color:inherit; text-decoration:none; }
+    .topbar { height:80px; display:flex; align-items:center; justify-content:space-between; padding:0 clamp(24px,6vw,90px); border-bottom:1px solid var(--line); background:rgba(7,14,24,.9); position:sticky; top:0; z-index:5; backdrop-filter:blur(18px); }
+    .brand { display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:-.04em; font-size:20px; }
+    .brand-mark { width:26px; height:26px; display:grid; place-items:center; border:1px solid var(--green); color:var(--green); font:11px var(--mono); }
+    .nav { display:flex; align-items:center; gap:30px; color:var(--muted); font-size:13px; } .nav a:first-child { color:var(--ink); } .nav a:hover { color:var(--green); }
+    .status { display:flex; align-items:center; gap:8px; color:var(--muted); font:11px var(--mono); text-transform:uppercase; letter-spacing:.08em; }
+    .status-dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }
+    main { max-width:1280px; margin:auto; padding:74px clamp(24px,6vw,90px) 96px; }
+    .eyebrow { display:flex; align-items:center; gap:12px; color:var(--green); font:11px var(--mono); letter-spacing:.14em; text-transform:uppercase; }
+    .eyebrow::before { content:''; width:26px; height:1px; background:var(--green); }
+    h1 { max-width:750px; margin:25px 0 20px; font-size:clamp(42px,6vw,76px); line-height:.98; letter-spacing:-.075em; } h1 span { color:#66707e; }
+    .intro { max-width:580px; color:var(--muted); font-size:16px; line-height:1.8; margin:0 0 54px; }
+    .workspace { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(350px,.9fr); border:1px solid var(--line); background:var(--panel); }
+    .form-panel { padding:clamp(24px,4vw,44px); border-right:1px solid var(--line); }
+    .panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:34px; }
+    .panel-heading h2 { margin:0 0 8px; font-size:21px; letter-spacing:-.04em; } .panel-heading p { margin:0; color:var(--muted); font-size:12px; line-height:1.6; } .step { color:var(--muted); font:11px var(--mono); white-space:nowrap; }
+    .fields { display:grid; grid-template-columns:repeat(2,1fr); gap:22px 18px; }
+    label { display:block; color:#b9c0c9; font:11px var(--mono); letter-spacing:.04em; text-transform:uppercase; }
+    .field-wrap { position:relative; margin-top:9px; } input { width:100%; border:1px solid var(--line); outline:none; color:var(--ink); background:#0c1521; padding:14px 46px 14px 14px; font:15px var(--mono); transition:border .2s,background .2s; }
+    input:focus { border-color:var(--green); background:#101c2a; } input:invalid:not(:placeholder-shown) { border-color:#e7796a; } .unit { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#64707e; font:11px var(--mono); }
+    .actions { display:flex; align-items:center; gap:16px; margin-top:36px; } .primary { border:0; background:var(--green); color:#10200e; padding:15px 22px; font-weight:800; font-size:13px; transition:transform .2s,background .2s; } .primary:hover { background:#d2ff9e; transform:translateY(-2px); }
+    .reset { border:0; background:transparent; color:var(--muted); font:12px var(--mono); padding:10px 0; } .reset:hover { color:var(--ink); }
+    .result-panel { padding:clamp(24px,4vw,44px); background:linear-gradient(145deg,#172437 0%,#111a27 62%); display:flex; flex-direction:column; min-height:440px; }
+    .result-label { display:flex; justify-content:space-between; color:var(--muted); font:11px var(--mono); letter-spacing:.1em; text-transform:uppercase; } .result-label span:last-child { color:var(--green); }
+    .result-content { margin-top:auto; } .result-content small { color:var(--muted); font:12px var(--mono); } .crop-name { margin:13px 0 7px; font-size:clamp(44px,5vw,68px); letter-spacing:-.08em; line-height:1; }
+    .confidence { display:flex; align-items:center; gap:12px; color:var(--muted); font:12px var(--mono); } .bar { width:120px; height:4px; background:#2b3745; } .bar i { display:block; width:82%; height:100%; background:var(--green); transition:width .5s ease; }
+    .result-note { color:#b9c0c9; font-size:13px; line-height:1.7; max-width:340px; margin:24px 0 0; }
+    .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); margin-top:42px; border:1px solid var(--line); } .metric { background:var(--panel); padding:17px; } .metric b { display:block; font:16px var(--mono); color:var(--ink); margin-bottom:6px; } .metric span { color:var(--muted); font-size:10px; }
+    .lower { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; } .info-block { border-top:1px solid var(--line); padding-top:22px; } .info-block h3 { font-size:14px; margin:0 0 9px; } .info-block p { color:var(--muted); font-size:12px; line-height:1.7; margin:0; } .profiles { display:flex; flex-wrap:wrap; gap:9px; margin-top:18px; } .profile { padding:8px 10px; border:1px solid var(--line); color:var(--muted); font:10px var(--mono); }
+    footer { border-top:1px solid var(--line); padding:26px clamp(24px,6vw,90px); color:#5c6674; display:flex; justify-content:space-between; font:11px var(--mono); }
+    @media (max-width:820px) { .topbar { height:68px; } .nav { display:none; } main { padding-top:52px; } .workspace { grid-template-columns:1fr; } .form-panel { border-right:0; border-bottom:1px solid var(--line); } }
+    @media (max-width:520px) { .status { display:none; } h1 { font-size:43px; } .fields,.lower { grid-template-columns:1fr; } .actions { align-items:flex-start; flex-direction:column; } .primary { width:100%; } .result-panel { min-height:390px; } footer { flex-direction:column; gap:9px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="#top"><span class="brand-mark">FW</span> fieldwise</a><nav class="nav" aria-label="Primary navigation"><a href="#predict">Predict</a><a href="#method">Method</a><a href="#profiles">Profiles</a></nav><div class="status"><span class="status-dot"></span> model online</div></header>
+  <main id="top">
+    <div class="eyebrow">Precision agriculture / v1.0</div>
+    <h1>Know what to grow.<br><span>Before you sow.</span></h1>
+    <p class="intro">Enter the conditions from your field and Fieldwise will compare them against the trained crop profiles to recommend the strongest match.</p>
+    <section class="workspace" id="predict">
+      <form class="form-panel" id="prediction-form">
+        <div class="panel-heading"><div><h2>Field conditions</h2><p>Use readings from your sensors or enter a field estimate.</p></div><span class="step">01 / 01</span></div>
+        <div class="fields">
+          <div><label for="temperature">Temperature</label><div class="field-wrap"><input id="temperature" type="number" min="0" max="40" step="0.1" value="25" required><span class="unit">°C</span></div></div>
+          <div><label for="humidity">Humidity</label><div class="field-wrap"><input id="humidity" type="number" min="0" max="100" step="0.1" value="60" required><span class="unit">%</span></div></div>
+          <div><label for="moisture">Soil moisture</label><div class="field-wrap"><input id="moisture" type="number" min="0" max="1000" step="1" value="400" required><span class="unit">raw</span></div></div>
+          <div><label for="ph">Soil pH</label><div class="field-wrap"><input id="ph" type="number" min="0" max="14" step="0.1" value="6.5" required><span class="unit">pH</span></div></div>
+          <div><label for="nitrogen">Nitrogen (N)</label><div class="field-wrap"><input id="nitrogen" type="number" min="0" max="200" step="1" value="50" required><span class="unit">mg/kg</span></div></div>
+          <div><label for="phosphorus">Phosphorus (P)</label><div class="field-wrap"><input id="phosphorus" type="number" min="0" max="200" step="1" value="30" required><span class="unit">mg/kg</span></div></div>
+          <div><label for="potassium">Potassium (K)</label><div class="field-wrap"><input id="potassium" type="number" min="0" max="200" step="1" value="40" required><span class="unit">mg/kg</span></div></div>
+        </div>
+        <div class="actions"><button class="primary" type="submit">Run prediction <span aria-hidden="true">→</span></button><button class="reset" type="button" id="reset">Reset fields</button></div>
+      </form>
+      <aside class="result-panel" aria-live="polite"><div class="result-label"><span>Recommended crop</span><span id="result-state">ready</span></div><div class="result-content"><small>best matching profile</small><div class="crop-name" id="crop-name">Rice</div><div class="confidence"><span id="confidence-text">82% confidence</span><span class="bar"><i id="confidence-bar"></i></span></div><p class="result-note" id="result-note">Your field conditions align most closely with the Rice profile in the current training set.</p></div><div class="metrics"><div class="metric"><b id="metric-temp">25°C</b><span>temperature</span></div><div class="metric"><b id="metric-ph">6.5</b><span>soil pH</span></div><div class="metric"><b id="metric-moisture">400</b><span>moisture index</span></div></div></aside>
+    </section>
+    <section class="lower" id="method"><div class="info-block"><h3>How the match works</h3><p>The API scores the distance to each available labeled profile using the same seven feature columns as the training data. Lower distance means a closer field match.</p></div><div class="info-block" id="profiles"><h3>Current training profiles</h3><p>These labeled rows are loaded from <strong>recomendation.csv</strong>.</p><div class="profiles" id="profile-list"><span class="profile">LOADING PROFILES</span></div></div></section>
+  </main>
+  <footer><span>FIELDWISE / PRECISION AGRICULTURE</span><span>LOCAL MODEL INTERFACE / 2026</span></footer>
+  <script>
+    const keys = ['temperature','humidity','moisture','ph','nitrogen','phosphorus','potassium'];
+    const form = document.querySelector('#prediction-form');
+    const resultState = document.querySelector('#result-state');
+    const cropName = document.querySelector('#crop-name');
+    const confidenceText = document.querySelector('#confidence-text');
+    const confidenceBar = document.querySelector('#confidence-bar');
+    const resultNote = document.querySelector('#result-note');
+    function readInputs() { return Object.fromEntries(keys.map((key) => [key, Number(document.querySelector(`#${key}`).value)])); }
+    function renderResult(values, winner, confidence) {
+      cropName.textContent = winner;
+      confidenceText.textContent = `${confidence}% confidence`;
+      confidenceBar.style.width = `${confidence}%`;
+      resultState.textContent = 'updated now';
+      resultNote.textContent = `Your field conditions align most closely with the ${winner} profile in the current training set.`;
+      document.querySelector('#metric-temp').textContent = `${values.temperature}°C`;
+      document.querySelector('#metric-ph').textContent = values.ph;
+      document.querySelector('#metric-moisture').textContent = values.moisture;
+    }
+
+    async function renderPrediction() {
+      if (!form.checkValidity()) { form.reportValidity(); return; }
+      const values = readInputs();
+      resultState.textContent = 'calculating';
+      try {
+        const response = await fetch('/api/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(values) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Prediction request failed');
+        renderResult(values, result.crop, result.confidence);
+      } catch (error) {
+        resultState.textContent = 'error';
+        resultNote.textContent = error.message || 'The prediction service is unavailable. Please try again.';
+      }
+    }
+    async function loadProfiles() {
+      const list = document.querySelector('#profile-list');
+      try {
+        const response = await fetch('/api/profiles');
+        if (!response.ok) throw new Error('Unable to load profiles');
+        const data = await response.json();
+        list.replaceChildren(...data.profiles.map((crop) => {
+          const tag = document.createElement('span');
+          tag.className = 'profile';
+          tag.textContent = `${crop.toUpperCase()} / 7 FEATURES`;
+          return tag;
+        }));
+      } catch (error) {
+        list.replaceChildren();
+        const tag = document.createElement('span');
+        tag.className = 'profile';
+        tag.textContent = 'PROFILE SERVICE UNAVAILABLE';
+        list.append(tag);
+      }
+    }
+    form.addEventListener('submit', (event) => { event.preventDefault(); renderPrediction(); });
+    document.querySelector('#reset').addEventListener('click', () => { form.reset(); renderPrediction(); });
+    loadProfiles();
+  </script>
+</body>
+</html>

@@ -1,87 +1,141 @@
-import numpy as np
-import matplotlib.pyplot as plt
+from pathlib import Path
+
+import joblib
 import pandas as pd
-from scipy.interpolate import CubicSpline
-from dtaidistance import dtw
+
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
-# Load data from CSV file
-data = pd.read_csv('recomendation.csv')
+ROOT = Path(__file__).resolve().parent
+DATASET_PATH = ROOT / "recomendation.csv"
+MODEL_PATH = ROOT / "crop_model.pkl"
 
-# Define x values (N, P, K, pH, Soil Moisture, Humidity, Temperature)
-x = np.array([0, 1, 2, 3, 4, 5, 6])  # Assign numerical values
-x_labels = ['N', 'P', 'K', 'pH', 'Soil Moisture', 'Humidity', 'Temperature']
+data = pd.read_csv(DATASET_PATH)
 
-# New graph values
-new_y = np.array([90, 45, 50, 5.9, 60, 80, 25])
-new_soil_data = pd.DataFrame([new_y], columns=['N', 'P', 'K', 'pH', 'Soil Moisture', 'Humidity', 'Temperature'])
+print("\nDataset loaded successfully!")
+print("Shape:", data.shape)
 
-# Use Cubic Spline interpolation for smooth curve
-cs_new = CubicSpline(x, new_y)
-x_interp = np.linspace(x.min(), x.max(), 100)
-y_interp_new = cs_new(x_interp)
+print("\nFirst 5 rows:")
+print(data.head())
 
-plt.figure(figsize=(10, 6))
+print("\nMissing values:")
+print(data.isnull().sum())
 
-# Plot old graphs
-for index, row in data.iterrows():
-    crop = row['Crop']
-    y = np.array([row['N'], row['P'], row['K'], row['pH'], row['Soil Moisture'], row['Humidity'], row['Temperature']])
-    cs = CubicSpline(x, y)
-    y_interp = cs(x_interp)
-    plt.plot(x_interp, y_interp, label=crop)
-    plt.scatter(x, y)
+print("\nCrop distribution:")
+print(data["Crop"].value_counts())
 
-# Plot the new graph
-plt.plot(x_interp, y_interp_new, label='New Graph')
-plt.scatter(x, new_y)
-plt.xticks(x, x_labels)  # Set x-axis tick labels
-plt.xlabel('Parameters')
-plt.ylabel('Values')
-plt.title('New Graph')
-plt.legend()
-plt.show()
+features = [
+    "N",
+    "P",
+    "K",
+    "pH",
+    "Soil Moisture",
+    "Humidity",
+    "Temperature"
+]
 
-# Calculate similarity with existing graphs
-similarities = []
-for index, row in data.iterrows():
-    crop = row['Crop']
-    y = np.array([row['N'], row['P'], row['K'], row['pH'], row['Soil Moisture'], row['Humidity'], row['Temperature']])
-    cs = CubicSpline(x, y)
-    y_interp = cs(x_interp)
-    distance = dtw.distance(y_interp_new, y_interp)  
-    similarity = 1 / (1 + distance)  # Convert distance to similarity
-    similarities.append((crop, similarity * 100))  # Convert to percentage
+X = data[features]
+y = data["Crop"]
 
-# Print similarities
-for crop, similarity in similarities:
-    print(f'Similarity with {crop}: {similarity:.2f}%')
 
-# Find the most similar graph
-most_similar_crop = max(similarities, key=lambda x: x[1])
-print(f'Most similar crop: {most_similar_crop[0]} with similarity {most_similar_crop[1]:.2f}%')
+# ============================================================
+# 4. TRAIN / TEST SPLIT
+# ============================================================
 
-# Define features (X) and target (y)
-X = data[['N', 'P', 'K', 'pH', 'Soil Moisture', 'Humidity', 'Temperature']]
-y = data['Crop']
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+)
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print("\nTraining samples:", len(X_train))
+print("Testing samples:", len(X_test))
 
-# Train a Random Forest Classifier
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=None,
+    random_state=42,
+    n_jobs=-1
+)
+
+print("\nTraining model...")
+
 model.fit(X_train, y_train)
 
-# Make predictions on the test set
+print("Training completed!")
+
 y_pred = model.predict(X_test)
- 
-# Evaluate the model
+
 accuracy = accuracy_score(y_test, y_pred)
-print("Accuracy:", accuracy)
-print("Classification Report:")
+
+print("\n================================")
+print("MODEL PERFORMANCE")
+print("================================")
+
+print("Accuracy:", round(accuracy * 100, 2), "%")
+
+print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 
+print("\n================================")
+print("FEATURE IMPORTANCE")
+print("================================")
+
+importance = pd.DataFrame({
+    "Feature": features,
+    "Importance": model.feature_importances_
+})
+
+importance = importance.sort_values(
+    by="Importance",
+    ascending=False
+)
+
+print(importance)
+
+new_soil_data = pd.DataFrame(
+    [[90, 45, 50, 5.9, 60, 80, 25]],
+    columns=features
+)
+
 predicted_crop = model.predict(new_soil_data)
-print("Predicted Crop:", predicted_crop[0])
+
+print("\n================================")
+print("CROP RECOMMENDATION")
+print("================================")
+
+print("Input:")
+print(new_soil_data)
+
+print("\nRecommended Crop:", predicted_crop[0])
+
+probabilities = model.predict_proba(new_soil_data)[0]
+
+results = pd.DataFrame({
+    "Crop": model.classes_,
+    "Probability": probabilities
+})
+
+results = results.sort_values(
+    by="Probability",
+    ascending=False
+)
+
+print("\nCrop probabilities:")
+
+for _, row in results.head(5).iterrows():
+    print(
+        f"{row['Crop']}: "
+        f"{row['Probability'] * 100:.2f}%"
+    )
+    
+joblib.dump(model, MODEL_PATH)
+
+print("\n================================")
+print("MODEL SAVED")
+print("================================")
+
+print(f"Saved as: {MODEL_PATH}")
