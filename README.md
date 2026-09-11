@@ -121,3 +121,7 @@ The API returns the closest profile and a relative confidence score. Evaluate an
 
 - Libraries: Scikit-learn, Matplotlib, DTAIDistance
 - Special thanks to the Open Source and IoT communities
+
+## LIVE DEMO HERE
+
+-  https://crop-recommendation-using-ai-ml.onrender.com/
